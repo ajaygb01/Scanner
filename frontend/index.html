@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Crypto Momentum Scanner</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white min-h-screen flex flex-col items-center px-4 py-8">
+
+  <h1 class="text-3xl font-bold mb-6 text-center">🔍 Crypto Momentum Scanner</h1>
+
+  <div class="w-full max-w-xl bg-gray-800 p-6 rounded-lg shadow-md">
+    <label class="block mb-2 text-sm font-medium">Investment Amount (USD):</label>
+    <input type="number" id="amountInput" placeholder="e.g. 100"
+      class="w-full p-3 rounded bg-gray-700 text-white placeholder-gray-400 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500">
+
+    <button onclick="scanMarkets()"
+      class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded transition">
+      🚀 Scan Markets
+    </button>
+  </div>
+
+  <div id="results" class="w-full max-w-6xl mt-10 hidden">
+    <h2 class="text-xl font-semibold mb-4">📊 Potential Movers</h2>
+    <div class="overflow-x-auto rounded-lg border border-gray-700">
+      <table class="min-w-full divide-y divide-gray-700">
+        <thead class="bg-gray-800 text-sm text-left text-gray-400">
+          <tr>
+            <th class="px-4 py-3">Symbol</th>
+            <th class="px-4 py-3">Price</th>
+            <th class="px-4 py-3">Can Buy</th>
+            <th class="px-4 py-3">RSI</th>
+            <th class="px-4 py-3">Volume Spike</th>
+            <th class="px-4 py-3">EMA Fast</th>
+            <th class="px-4 py-3">EMA Slow</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody" class="divide-y divide-gray-800 text-sm"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    async function scanMarkets() {
+      const amount = document.getElementById("amountInput").value || 100;
+      const resultsDiv = document.getElementById("results");
+      const tableBody = document.getElementById("tableBody");
+
+      resultsDiv.classList.add("hidden");
+      tableBody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-gray-400">⏳ Loading...</td></tr>`;
+
+      try {
+        const res = await fetch(`http://localhost:8000/scan?amount=${amount}`);
+        const data = await res.json();
+
+        if (data.candidates.length === 0) {
+          tableBody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-gray-400">No bullish setups found.</td></tr>`;
+        } else {
+          tableBody.innerHTML = "";
+          data.candidates.forEach(item => {
+            const row = `
+              <tr class="hover:bg-gray-800">
+                <td class="px-4 py-3 font-medium text-blue-400">${item.symbol}</td>
+                <td class="px-4 py-3">$${item.price}</td>
+                <td class="px-4 py-3">${item.can_buy}</td>
+                <td class="px-4 py-3">${item.rsi}</td>
+                <td class="px-4 py-3">${item.vol_spike}x</td>
+                <td class="px-4 py-3">${item.ema_fast}</td>
+                <td class="px-4 py-3">${item.ema_slow}</td>
+              </tr>
+            `;
+            tableBody.innerHTML += row;
+          });
+        }
+
+        resultsDiv.classList.remove("hidden");
+      } catch (err) {
+        tableBody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-red-400">❌ Error fetching data.</td></tr>`;
+        console.error(err);
+      }
+    }
+  </script>
+
+</body>
+</html>
